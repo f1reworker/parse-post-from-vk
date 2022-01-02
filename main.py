@@ -112,7 +112,7 @@ async def getNews():
     for user in users:
         userKeywords = db.child("users").child(user).get().val().split(", ")[:-1]
         for keyword in userKeywords:
-            news = search(q = "инстаграмм", count = 200, extended=1)
+            news = search(q = keyword, count = 200, extended=1)
             if db.child("news").child("user").get().val()==None:   length = 0
             else: length = len(db.child("news").child("user").get().val())
             db.child("news").child(user).update({length: news['items']})
