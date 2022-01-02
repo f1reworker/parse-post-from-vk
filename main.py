@@ -105,14 +105,14 @@ def search(q=None, extended=None, count=None, latitude=None, longitude=None,\
     }
     result = call('newsfeed.search', **params)
     return parse_response(result)
-    
+
 def getNews():
     myTime = time.mktime((datetime.datetime.now()+datetime.timedelta(hours=2)).timetuple())
     users = db.child("users").get().val().keys()
     for user in users:
         userKeywords = db.child("users").child(user).get().val().split(", ")[:-1]
         for keyword in userKeywords:
-            news = search(q = keyword, count = 200, extended=1)
+            news = search(q = keyword, count = 200, extended=1, start_time=myTime)
             if db.child("news").child("user").get().val()==None:   length = 0
             else: length = len(db.child("news").child("user").get().val())
             db.child("news").child(user).update({length: news['items']})
