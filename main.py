@@ -105,8 +105,8 @@ def search(q=None, extended=None, count=None, latitude=None, longitude=None,\
     }
     result = call('newsfeed.search', **params)
     return parse_response(result)
-
-async def getNews():
+    
+def getNews():
     myTime = time.mktime((datetime.datetime.now()+datetime.timedelta(hours=2)).timetuple())
     users = db.child("users").get().val().keys()
     for user in users:
@@ -121,7 +121,7 @@ async def getNews():
 
 
 async def scheduler():
-    await getNews()
+    aioschedule.every(1).hours.do(getNews)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
