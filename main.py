@@ -1,11 +1,12 @@
+import datetime
+import time
 import vk_api
 import requests
 import pyrebase
 import asyncio
-import time
 from aiogram.types.message import ParseMode
 from config import db
-from config import flag
+import config
 from config import keywords
 import aiogram.utils.markdown as fmt
 import aioschedule
@@ -22,31 +23,31 @@ async def start(message: types.Message):
     await message.answer("Приветствую", reply_markup=keyboard)
 
 @bot.message_handler(lambda message: message.text=="Добавить ключевые слова")
-async def start(message: types.Message):
-    flag = "add"
+async def add(message: types.Message):
+    config.flag = "add"
     await message.answer("Введите ключевые слова, которые хотите добавить.")
 
 @bot.message_handler(lambda message: message.text=="Удалить ключевые слова")
-async def start(message: types.Message):
-    flag = "remove"
+async def remove(message: types.Message):
+    config.flag = "remove"
     await message.answer("Введите ключевые слова, которые хотите удалить.")
 
 @bot.message_handler(lambda message: message.text=="Закончить ввод")
-async def start(message: types.Message):
-    flag = ""
+async def stop(message: types.Message):
+    config.flag = ""
     await message.answer("Ввод закончен.")
 
 @bot.message_handler(lambda message: message.text=="Показать ключевые слова")
-async def start(message: types.Message):
+async def show(message: types.Message):
     await message.answer(db.child("users").child(message.from_user.id).get().val())   
 
-@bot.message_handler()
-async def start(message: types.Message):
-    if flag == "add":
+@bot.message_handler(lambda message: message.text != "Добавить ключевые слова" and message.text != "Удалить ключевые слова" and message.text !=  "Показать ключевые слова" and message.text !=  "Закончить ввод")
+async def words(message: types.Message):
+    if config.flag == "add":
         keywords = db.child("users").child(message.from_user.id).get().val()
-        db.child("users").update({message.from_user.id: "{keywords}{message.text}, "})
-    if flag == "remove":
-        keywords = db.child("users").child(message.from_user.id).get().val().replace("{message.text}, ", "")
+        db.child("users").update({message.from_user.id: f"{keywords}{message.text.lower()}, "})
+    if config.flag == "remove":
+        keywords = db.child("users").child(message.from_user.id).get().val().replace(message.text.lower()+ ", ", "")
         db.child("users").update({message.from_user.id: keywords})
 
 
@@ -105,9 +106,22 @@ def search(q=None, extended=None, count=None, latitude=None, longitude=None,\
     result = call('newsfeed.search', **params)
     return parse_response(result)
 
+async def getNews():
+    myTime = time.mktime((datetime.datetime.now()+datetime.timedelta(hours=2)).timetuple())
+    users = db.child("users").get().val().keys()
+    for user in users:
+        userKeywords = db.child("users").child(user).get().val().split(", ")[:-1]
+        for keyword in userKeywords:
+            news = search(q = "инстаграмм", count = 200, extended=1)
+            if db.child("news").child("user").get().val()==None:   length = 0
+            else: length = len(db.child("news").child("user").get().val())
+            db.child("news").child(user).update({length: news['items']})
+            print(news)
+        
+
 
 async def scheduler():
-
+    await getNews()
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
