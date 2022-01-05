@@ -106,22 +106,58 @@ def search(q=None, extended=None, count=None, latitude=None, longitude=None,\
     result = call('newsfeed.search', **params)
     return parse_response(result)
 
-def getNews():
-    myTime = time.mktime((datetime.datetime.now()+datetime.timedelta(hours=2)).timetuple())
-    users = db.child("users").get().val().keys()
-    for user in users:
-        userKeywords = db.child("users").child(user).get().val().split(", ")[:-1]
-        for keyword in userKeywords:
-            news = search(q = keyword, count = 200, extended=1, start_time=myTime)
-            if db.child("news").child("user").get().val()==None:   length = 0
-            else: length = len(db.child("news").child("user").get().val())
-            db.child("news").child(user).update({length: news['items']})
-            print(news)
+        
+def get(filters=None, return_banned=None, start_time=None, end_time=None,\
+        max_photos=None, source_ids=None, start_from=None, count=None, fields=None,\
+        from_=None, offset=None):
+    """
+    Returns data required to show newsfeed for the current
+    user.
+    https://vk.com/dev/newsfeed.get
+    """
+    params = {
+        'filters': filters,
+        'return_banned': return_banned,
+        'start_time': start_time,
+        'end_time': end_time,
+        'max_photos': max_photos,
+        'source_ids': source_ids,
+        'start_from': start_from,
+        'count': count,
+        'fields': fields,
+        'from_': from_,
+        'offset': offset
+    }
+    result = call('newsfeed.get', **params)
+    return parse_response(result)
+
+
+async def senMessage(text, word, url):
+    await bot.bot.send_message(1017900791, f'Новый пост с ключевым словом\nКлючевое слово: {word}\nСсылка на пост: {url}\nТекст:\n{text}')
+
+async def getNews():
+    while True:
+        time.sleep(1)
+        keywords = ['следственный', 'дети', 'ребенок', 'мальчик', 'девочка', 'несовершеннолетний', 'опасно', 'авария', 'ЖКХ', 'сирота', 'плата', ' ск ']
+        lastNews = db.child("news").child("lastNews").get().val()
+        news = get(filters="post", source_ids="-98338503, -64781060, -61144644, -133699817, -138392500, -138140232", start_from=lastNews)
+        if not "next_form" in list(news.keys()):
+            continue
+        db.child("news").update({"lastNews": news["next_from"]})
+        newsList = news["items"]
+        for item in newsList:
+            for word in keywords:
+                if(word in item["text"]):                   
+                    postAndGroup = str(abs(item["source_id"]))+"_"+ str(item["post_id"])
+                    url = "https://vk.com/wall-"+postAndGroup
+                    await senMessage(text=item["text"], word=word, url=url)
+                    db.child("news").update({postAndGroup: {"keyword": word, "text": item["text"][:2000], "url": url}})
+                    break
         
 
 
 async def scheduler():
-    aioschedule.every(1).hours.do(getNews)
+    await getNews()
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
