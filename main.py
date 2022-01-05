@@ -137,7 +137,7 @@ async def senMessage(text, word, url):
 
 async def getNews():
     while True:
-        time.sleep(1)
+        time.sleep(200)
         keywords = ['следственный', 'дети', 'ребенок', 'мальчик', 'девочка', 'несовершеннолетний', 'опасно', 'авария', 'ЖКХ', 'сирота', 'плата', ' ск ']
         lastNews = db.child("news").child("lastNews").get().val()
         news = get(filters="post", source_ids="-98338503, -64781060, -61144644, -133699817, -138392500, -138140232", start_from=lastNews)
