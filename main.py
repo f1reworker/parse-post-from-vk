@@ -83,29 +83,22 @@ def call(method, **params):
     request = requests.get(url, params=params)
     return request.json()
 
-def search(q=None, extended=None, count=None, latitude=None, longitude=None,\
-           start_time=None, end_time=None, start_from=None, fields=None,\
-           start_id=None, offset=None):
+
+def getById(group_ids=None, group_id=None, fields=None):
     """
-    Returns search results by statuses. 
-    https://vk.com/dev/newsfeed.search
+    Returns information about communities by their IDs.
+    https://vk.com/dev/groups.getById
     """
     params = {
-        'q': q,
-        'extended': extended,
-        'count': count,
-        'latitude': latitude,
-        'longitude': longitude,
-        'start_time': start_time,
-        'end_time': end_time,
-        'start_from': start_from,
-        'fields': fields,
-        'start_id': start_id,
-        'offset': offset
+        'group_ids': group_ids,
+        'group_id': group_id,
+        'fields': fields
     }
-    result = call('newsfeed.search', **params)
+    result = call('groups.getById', **params)
     return parse_response(result)
 
+ff = getById(group_id='y_o_12')
+print(ff)
         
 def get(filters=None, return_banned=None, start_time=None, end_time=None,\
         max_photos=None, source_ids=None, start_from=None, count=None, fields=None,\
@@ -136,23 +129,31 @@ async def senMessage(text, word, url):
     await bot.bot.send_message(1017900791, f'Новый пост с ключевым словом\nКлючевое слово: {word}\nСсылка на пост: {url}\nТекст:\n{text}')
 
 async def getNews():
+
     while True:
-        time.sleep(200)
-        keywords = ['следственный', 'дети', 'ребенок', 'мальчик', 'девочка', 'несовершеннолетний', 'опасно', 'авария', 'ЖКХ', 'сирота', 'плата', ' ск ']
+        time.sleep(2)
+        keywords = db.child("users").child(1017900791).child("keywords").get().val()[:-2].split(", ")
+        groups = db.child("users").child(1017900791).child("groups").get().val()
         lastNews = db.child("news").child("lastNews").get().val()
-        news = get(filters="post", source_ids="-98338503, -64781060, -61144644, -133699817, -138392500, -138140232", start_from=lastNews)
-        if not "next_form" in list(news.keys()):
+        news = get(filters="post", source_ids=groups, start_from=lastNews)
+        if news == None:
+            time.sleep(600)
             continue
-        db.child("news").update({"lastNews": news["next_from"]})
+        if  "next_form" in list(news.keys()):
+            db.child("news").update({"lastNews": news["next_from"]})
         newsList = news["items"]
-        for item in newsList:
-            for word in keywords:
-                if(word in item["text"]):                   
-                    postAndGroup = str(abs(item["source_id"]))+"_"+ str(item["post_id"])
-                    url = "https://vk.com/wall-"+postAndGroup
-                    await senMessage(text=item["text"], word=word, url=url)
-                    db.child("news").update({postAndGroup: {"keyword": word, "text": item["text"][:2000], "url": url}})
-                    break
+        newsList.reverse()
+        if newsList[-1]['date']>db.child("news").child("lastDate").get().val():
+            for item in newsList:
+                for word in keywords:
+                    if(word in item["text"]):
+                        if item["date"]>db.child("news").child("lastDate").get().val():
+                            db.child("news").update({"lastDate": item["date"]})                  
+                            postAndGroup = str(abs(item["source_id"]))+"_"+ str(item["post_id"])
+                            url = "https://vk.com/wall-"+postAndGroup
+                            await senMessage(text=item["text"], word=word, url=url)
+                            db.child("news").update({postAndGroup: {"keyword": word, "text": item["text"][:2000], "url": url}})
+                            break
         
 
 
@@ -165,5 +166,5 @@ async def scheduler():
 async def on_startup(_):
     asyncio.create_task(scheduler())
 
-if __name__ == '__main__':
-    executor.start_polling(bot, skip_updates=False, on_startup=on_startup)
+# if __name__ == '__main__':
+#     executor.start_polling(bot, skip_updates=False, on_startup=on_startup)
