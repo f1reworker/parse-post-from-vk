@@ -66,11 +66,12 @@ def parse_response(response):
     try:
         return response['response']
     except KeyError:
+        db.child('errors').update({str(datetime.datetime.now()).replace(".", "-"): str(VKError(response['error']['error_msg']))})
         print(VKError(response['error']['error_msg']))
 
 class Config:
     token = "ff84888cbc3d717524586b88f55e2373dd96e1e4f95ba0f2bdce1589ae6ad03c81dc97dd8d12230af0dbc"
-    version = '5.81'
+    version = '5.131'
 
 
 def call(method, **params):
@@ -84,21 +85,9 @@ def call(method, **params):
     return request.json()
 
 
-def getById(group_ids=None, group_id=None, fields=None):
-    """
-    Returns information about communities by their IDs.
-    https://vk.com/dev/groups.getById
-    """
-    params = {
-        'group_ids': group_ids,
-        'group_id': group_id,
-        'fields': fields
-    }
-    result = call('groups.getById', **params)
-    return parse_response(result)
 
-ff = getById(group_id='y_o_12')
-print(ff)
+
+
         
 def get(filters=None, return_banned=None, start_time=None, end_time=None,\
         max_photos=None, source_ids=None, start_from=None, count=None, fields=None,\
@@ -124,36 +113,83 @@ def get(filters=None, return_banned=None, start_time=None, end_time=None,\
     result = call('newsfeed.get', **params)
     return parse_response(result)
 
+def getById(posts=None, extended=None, copy_history_depth=None, fields=None):
+    """
+    Returns a list of posts from user or community walls
+    by their IDs.
+    https://vk.com/dev/wall.getById
+    """
+    params = {
+        'posts': posts,
+        'extended': extended,
+        'copy_history_depth': copy_history_depth,
+        'fields': fields
+    }
+    result = call('wall.getById', **params)
+    return parse_response(result)
 
-async def senMessage(text, word, url):
-    await bot.bot.send_message(1017900791, f'Новый пост с ключевым словом\nКлючевое слово: {word}\nСсылка на пост: {url}\nТекст:\n{text}')
+
+def getComment(owner_id=None, comment_id=None, extended=None, fields = None):
+    """
+    Returns a list of comments on a post on a user wall
+    or community wall.
+    https://vk.com/dev/wall.getComment
+    """
+    params = {
+        'owner_id': owner_id,
+        'comment_id': comment_id,
+        'extended': extended,
+        'fields': fields
+    }
+    result = call('wall.getComment', **params)
+    return parse_response(result)
+
+
+
+async def checkKey(keywords, owner_id, post_id, text, typee):
+    for word in keywords:
+        if(word in text):           
+            postAndGroup = str(abs(owner_id))+"_"+ str(post_id)
+            url = "https://vk.com/wall-"+postAndGroup
+            await senMessage(text=text, word=word, url=url, typee=typee)
+            db.child("news").update({postAndGroup: {"keyword": word, "text": text[:1000], "url": url, "type": typee}})
+            break
+
+
+
+async def senMessage(text, word, url, typee):
+    await bot.bot.send_message(1017900791, f'Новый {typee} с ключевым словом\nКлючевое слово: {word}\nСсылка на пост: {url}\nТекст:\n{text}')
+    await bot.bot.send_message(2125738023, f'Новый {typee} с ключевым словом\nКлючевое слово: {word}\nСсылка на пост: {url}\nТекст:\n{text}')
 
 async def getNews():
 
     while True:
-        time.sleep(2)
+        time.sleep(200)
         keywords = db.child("users").child(1017900791).child("keywords").get().val()[:-2].split(", ")
-        groups = db.child("users").child(1017900791).child("groups").get().val()
-        lastNews = db.child("news").child("lastNews").get().val()
-        news = get(filters="post", source_ids=groups, start_from=lastNews)
-        if news == None:
-            time.sleep(600)
-            continue
-        if  "next_form" in list(news.keys()):
-            db.child("news").update({"lastNews": news["next_from"]})
-        newsList = news["items"]
-        newsList.reverse()
-        if newsList[-1]['date']>db.child("news").child("lastDate").get().val():
-            for item in newsList:
-                for word in keywords:
-                    if(word in item["text"]):
-                        if item["date"]>db.child("news").child("lastDate").get().val():
-                            db.child("news").update({"lastDate": item["date"]})                  
-                            postAndGroup = str(abs(item["source_id"]))+"_"+ str(item["post_id"])
-                            url = "https://vk.com/wall-"+postAndGroup
-                            await senMessage(text=item["text"], word=word, url=url)
-                            db.child("news").update({postAndGroup: {"keyword": word, "text": item["text"][:2000], "url": url}})
-                            break
+        groups = db.child("users").child(1017900791).child("groups").get().val()[:-2].split(", ")
+        lastDate = db.child("news").child("lastDate").get().val()
+        for group in groups:
+            news = get(filters="post", source_ids=group, start_time=lastDate)["items"]
+            postIds = []
+            if news!=None:  db.child('groups').child(int(group)).update({"lastPost": news[00]['post_id']})
+            for new in news:
+                if new['date']>db.child("news").child("lastDate").get().val(): db.child("news").update({"lastDate": new['date']}) 
+                await checkKey(keywords=keywords, owner_id=new['source_id'], post_id=new['post_id'], text=new['text'].lower(), typee="пост") 
+                postIds.append(new['post_id'])
+            if len(postIds)==1: postIds.append(db.child('groups').child(int(group)).child("lastPost").get().val())
+            if len(postIds)>=2:
+                for i in range(postIds[-1], postIds[0]):
+                    time.sleep(3)
+                    if i not in postIds:
+                        comment = getComment(owner_id=int(group), comment_id=i)
+                        if comment!=None:
+                            comment = comment['items'][0]
+                            if comment['date']>db.child("news").child("lastDate").get().val(): db.child("news").update({"lastDate": comment['date']})  
+                            await checkKey(keywords=keywords, owner_id=comment['owner_id'], post_id=i, text=comment['text'].lower(), typee="комментарий")
+                    
+                
+                
+        
         
 
 
@@ -166,5 +202,5 @@ async def scheduler():
 async def on_startup(_):
     asyncio.create_task(scheduler())
 
-# if __name__ == '__main__':
-#     executor.start_polling(bot, skip_updates=False, on_startup=on_startup)
+if __name__ == '__main__':
+    executor.start_polling(bot, skip_updates=False, on_startup=on_startup)
