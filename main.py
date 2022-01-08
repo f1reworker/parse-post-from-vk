@@ -1,55 +1,88 @@
 import datetime
 import time
-import vk_api
 import requests
-import pyrebase
 import asyncio
-from aiogram.types.message import ParseMode
 from config import db
-import config
-from config import keywords
 import aiogram.utils.markdown as fmt
 import aioschedule
 from aiogram import Bot, Dispatcher, executor, types
 
 token = Bot(token="2057472245:AAHXiB2teJOWQa7CXwH0uLd8cJItn4YvD4A")
 bot = Dispatcher(token)
+
+@bot.message_handler(commands="группа")
+async def addGroup(message: types.Message):
+    url = message.text.split("vk.com/")[-1]
+    groupId = getById(group_id=url)
+    if groupId==None:
+        await message.answer('Что-то пошло не так, попробуйте позже или сообщите разработчику')
+    else:
+        try: 
+            groups = db.child("users").child(message.from_user.id).child("groups").get().val()
+            if groups == None: groups = ""
+            groups+="-"+str(groupId[0]['id'])+", "
+            db.child("users").child(message.from_user.id).update({'groups': groups})
+        except:
+            await message.answer('Что-то пошло не так, попробуйте позже или сообщите разработчику')
+        else:
+            await message.answer(f"Группа {message.text.split('/группа ')[-1]} добавлена",)
+
+
+@bot.message_handler(commands="угруппа")
+async def removeGroup(message: types.Message):
+    url = message.text.split("vk.com/")[-1]
+    groupId = getById(group_id=url)
+    if groupId==None:
+        await message.answer('Что-то пошло не так, попробуйте позже или сообщите разработчику')
+    else:
+        try: 
+            groups = db.child("users").child(message.from_user.id).child("groups").get().val()
+            if groups == None: groups = ""
+            rg = "-"+str(groupId[0]['id'])+","
+            groups = groups.replace(rg, "")
+            db.child("users").child(message.from_user.id).update({'groups': groups})
+        except:
+            await message.answer('Что-то пошло не так, попробуйте позже или сообщите разработчику')
+        else:
+            await message.answer(f"Группа {message.text.split('/угруппа ')[-1]} удалена")
+
+@bot.message_handler(commands="слово")
+async def addKeyword(message: types.Message):
+    keywords = db.child("users").child(message.from_user.id).child("keywords").get().val()
+    if keywords == None: keywords = ""
+    newWord = message.text.lower().split("/слово ")[-1].replace("[", " ").replace("]", " ")
+    db.child("users").child(message.from_user.id).update({'keywords': f"{keywords}{newWord}, "})
+    nw = fmt.hbold(newWord)
+    await message.answer(f'Слово {nw} добавлено', parse_mode=types.ParseMode.HTML)
+
+@bot.message_handler(commands="услово")
+async def addKeyword(message: types.Message):
+    keywords = str(db.child("users").child(message.from_user.id).child("keywords").get().val())
+    if keywords == None: keywords = ""
+    newWord = message.text.lower().split("/услово ")[-1].replace("[", " ").replace("]", " ")+", "
+    keywords = keywords.replace(newWord, '')
+    db.child("users").child(message.from_user.id).update({'keywords': keywords})
+    nw = fmt.hbold(newWord)
+    await message.answer(f'Слово {nw} удалено',  parse_mode=types.ParseMode.HTML)
+
+
 @bot.message_handler(commands="start")
 async def start(message: types.Message):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    buttons = ["Добавить ключевые слова", "Удалить ключевые слова", "Показать ключевые слова", "Закончить ввод"]
+    buttons = ["Помощь", "Удалить ключевые слова"]
     keyboard.add(*buttons)
     db.child("users").update({message.from_user.id: ""})
     await message.answer("Приветствую", reply_markup=keyboard)
-
-@bot.message_handler(lambda message: message.text=="Добавить ключевые слова")
-async def add(message: types.Message):
-    config.flag = "add"
-    await message.answer("Введите ключевые слова, которые хотите добавить.")
-
-@bot.message_handler(lambda message: message.text=="Удалить ключевые слова")
-async def remove(message: types.Message):
-    config.flag = "remove"
-    await message.answer("Введите ключевые слова, которые хотите удалить.")
-
-@bot.message_handler(lambda message: message.text=="Закончить ввод")
-async def stop(message: types.Message):
-    config.flag = ""
-    await message.answer("Ввод закончен.")
 
 @bot.message_handler(lambda message: message.text=="Показать ключевые слова")
 async def show(message: types.Message):
     await message.answer(db.child("users").child(message.from_user.id).get().val())   
 
-@bot.message_handler(lambda message: message.text != "Добавить ключевые слова" and message.text != "Удалить ключевые слова" and message.text !=  "Показать ключевые слова" and message.text !=  "Закончить ввод")
-async def words(message: types.Message):
-    if config.flag == "add":
-        keywords = db.child("users").child(message.from_user.id).get().val()
-        db.child("users").update({message.from_user.id: f"{keywords}{message.text.lower()}, "})
-    if config.flag == "remove":
-        keywords = db.child("users").child(message.from_user.id).get().val().replace(message.text.lower()+ ", ", "")
-        db.child("users").update({message.from_user.id: keywords})
-
+@bot.message_handler(lambda message: message.text=="Помощь")
+async def show(message: types.Message):
+    await message.answer("Команды:\n\n/группа - добавить группу\nПример: /группа https://vk.com/palatavol12\
+        \n\n/угруппа - удалить группу\nПример: /угруппа https://vk.com/palatavol12 \n\n/слово - добавить ключевое слово\
+        \nПример: /слово ключевое слово\nАббревиатуры в квадратные скобки - [ск]\n\n/услово - удалить ключевое слово (все так же, как и с добавлением)", disable_web_page_preview=True)   
 
 __prefix = 'https://api.vk.com/method/'
 
@@ -87,7 +120,6 @@ def call(method, **params):
 
 
 
-
         
 def get(filters=None, return_banned=None, start_time=None, end_time=None,\
         max_photos=None, source_ids=None, start_from=None, count=None, fields=None,\
@@ -113,20 +145,19 @@ def get(filters=None, return_banned=None, start_time=None, end_time=None,\
     result = call('newsfeed.get', **params)
     return parse_response(result)
 
-def getById(posts=None, extended=None, copy_history_depth=None, fields=None):
+def getById(group_ids=None, group_id=None, fields=None):
     """
-    Returns a list of posts from user or community walls
-    by their IDs.
-    https://vk.com/dev/wall.getById
+    Returns information about communities by their IDs.
+    https://vk.com/dev/groups.getById
     """
     params = {
-        'posts': posts,
-        'extended': extended,
-        'copy_history_depth': copy_history_depth,
+        'group_ids': group_ids,
+        'group_id': group_id,
         'fields': fields
     }
-    result = call('wall.getById', **params)
+    result = call('groups.getById', **params)
     return parse_response(result)
+
 
 
 def getComment(owner_id=None, comment_id=None, extended=None, fields = None):
@@ -164,7 +195,7 @@ async def senMessage(text, word, url, typee):
 async def getNews():
 
     while True:
-        time.sleep(2)
+        time.sleep(200)
         keywords = db.child("users").child(1017900791).child("keywords").get().val()[:-2].split(", ")
         groups = db.child("users").child(1017900791).child("groups").get().val()[:-2].split(", ")
         lastDate = db.child("news").child("lastDate").get().val()
