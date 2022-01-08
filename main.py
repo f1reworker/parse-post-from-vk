@@ -164,17 +164,17 @@ async def senMessage(text, word, url, typee):
 async def getNews():
 
     while True:
-        time.sleep(200)
+        time.sleep(2)
         keywords = db.child("users").child(1017900791).child("keywords").get().val()[:-2].split(", ")
         groups = db.child("users").child(1017900791).child("groups").get().val()[:-2].split(", ")
         lastDate = db.child("news").child("lastDate").get().val()
         for group in groups:
             news = get(filters="post", source_ids=group, start_time=lastDate)["items"]
             postIds = []
-            if news!=None:  db.child('groups').child(int(group)).update({"lastPost": news[00]['post_id']})
+            if news!=None and news!=[]:  db.child('groups').child(int(group)).update({"lastPost": news[0]['post_id']})
             for new in news:
                 if new['date']>db.child("news").child("lastDate").get().val(): db.child("news").update({"lastDate": new['date']}) 
-                await checkKey(keywords=keywords, owner_id=new['source_id'], post_id=new['post_id'], text=new['text'].lower(), typee="пост") 
+                await checkKey(keywords=keywords, owner_id=new['source_id'], post_id=new['post_id'], text=new['text'].lower(), typee="📝 пост") 
                 postIds.append(new['post_id'])
             if len(postIds)==1: postIds.append(db.child('groups').child(int(group)).child("lastPost").get().val())
             if len(postIds)>=2:
@@ -185,7 +185,7 @@ async def getNews():
                         if comment!=None:
                             comment = comment['items'][0]
                             if comment['date']>db.child("news").child("lastDate").get().val(): db.child("news").update({"lastDate": comment['date']})  
-                            await checkKey(keywords=keywords, owner_id=comment['owner_id'], post_id=i, text=comment['text'].lower(), typee="комментарий")
+                            await checkKey(keywords=keywords, owner_id=comment['owner_id'], post_id=i, text=comment['text'].lower(), typee="💬 комментарий")
                     
                 
                 
