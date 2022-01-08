@@ -195,7 +195,7 @@ async def senMessage(text, word, url, typee):
 async def getNews():
 
     while True:
-        time.sleep(200)
+        await asyncio.sleep(200)
         keywords = db.child("users").child(1017900791).child("keywords").get().val()[:-2].split(", ")
         groups = db.child("users").child(1017900791).child("groups").get().val()[:-2].split(", ")
         lastDate = db.child("news").child("lastDate").get().val()
@@ -210,7 +210,7 @@ async def getNews():
             if len(postIds)==1: postIds.append(db.child('groups').child(int(group)).child("lastPost").get().val())
             if len(postIds)>=2:
                 for i in range(postIds[-1], postIds[0]):
-                    time.sleep(3)
+                    await asyncio.sleep(3)
                     if i not in postIds:
                         comment = getComment(owner_id=int(group), comment_id=i)
                         if comment!=None:
@@ -224,14 +224,8 @@ async def getNews():
         
 
 
-async def scheduler():
-    await getNews()
-    while True:
-        await aioschedule.run_pending()
-        await asyncio.sleep(1)
-
-async def on_startup(_):
-    asyncio.create_task(scheduler())
+async def on_startup(x):
+    asyncio.create_task(getNews())
 
 if __name__ == '__main__':
     executor.start_polling(bot, skip_updates=False, on_startup=on_startup)
