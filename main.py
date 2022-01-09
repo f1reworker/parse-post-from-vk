@@ -69,9 +69,8 @@ async def addKeyword(message: types.Message):
 @bot.message_handler(commands="start")
 async def start(message: types.Message):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    buttons = ["Помощь", "Удалить ключевые слова"]
+    buttons = ["Помощь", "Показать ключевые слова"]
     keyboard.add(*buttons)
-    db.child("users").update({message.from_user.id: ""})
     await message.answer("Приветствую", reply_markup=keyboard)
 
 @bot.message_handler(lambda message: message.text=="Показать ключевые слова")
