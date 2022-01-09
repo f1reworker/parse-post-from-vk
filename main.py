@@ -199,15 +199,18 @@ async def getNews():
         keywords = db.child("users").child(1017900791).child("keywords").get().val()[:-2].split(", ")
         groups = db.child("users").child(1017900791).child("groups").get().val()[:-2].split(", ")
         lastDate = db.child("news").child("lastDate").get().val()
+        
         for group in groups:
+            lastPost = db.child('groups').child(int(group)).child("lastPost").get().val()
             news = get(filters="post", source_ids=group, start_time=lastDate)["items"]
             postIds = []
+         
             if news!=None and news!=[]:  db.child('groups').child(int(group)).update({"lastPost": news[0]['post_id']})
             for new in news:
                 if new['date']>db.child("news").child("lastDate").get().val(): db.child("news").update({"lastDate": new['date']}) 
                 await checkKey(keywords=keywords, owner_id=new['source_id'], post_id=new['post_id'], text=new['text'].lower(), typee="📝 пост") 
                 postIds.append(new['post_id'])
-            if len(postIds)==1: postIds.append(db.child('groups').child(int(group)).child("lastPost").get().val())
+            if len(postIds)==1: postIds.append(lastPost)
             if len(postIds)>=2:
                 for i in range(postIds[-1], postIds[0]):
                     await asyncio.sleep(3)
