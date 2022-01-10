@@ -197,16 +197,18 @@ async def getNews():
         await asyncio.sleep(200)
         keywords = db.child("users").child(1017900791).child("keywords").get().val()[:-2].split(", ")
         groups = db.child("users").child(1017900791).child("groups").get().val()[:-2].split(", ")
-        lastDate = db.child("news").child("lastDate").get().val()
+        
         
         for group in groups:
+            lastDate = db.child(group).child("lastDate").get().val()
             lastPost = db.child('groups').child(int(group)).child("lastPost").get().val()
             news = get(filters="post", source_ids=group, start_time=lastDate)["items"]
             postIds = []
          
-            if news!=None and news!=[]:  db.child('groups').child(int(group)).update({"lastPost": news[0]['post_id']})
+            if news!=None and news!=[]:  
+                db.child('groups').child(int(group)).update({"lastPost": news[0]['post_id']})
+                db.child('groups').child(group).update({"lastDate": news[0]['date']+1}) 
             for new in news:
-                if new['date']>db.child("news").child("lastDate").get().val(): db.child("news").update({"lastDate": new['date']}) 
                 await checkKey(keywords=keywords, owner_id=new['source_id'], post_id=new['post_id'], text=new['text'].lower(), typee="📝 пост") 
                 postIds.append(new['post_id'])
             if len(postIds)==1: postIds.append(lastPost)
@@ -216,8 +218,7 @@ async def getNews():
                     if i not in postIds:
                         comment = getComment(owner_id=int(group), comment_id=i)
                         if comment!=None:
-                            comment = comment['items'][0]
-                            if comment['date']>db.child("news").child("lastDate").get().val(): db.child("news").update({"lastDate": comment['date']})  
+                            comment = comment['items'][0] 
                             await checkKey(keywords=keywords, owner_id=comment['owner_id'], post_id=i, text=comment['text'].lower(), typee="💬 комментарий")
                     
                 
