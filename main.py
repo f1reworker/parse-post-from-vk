@@ -200,14 +200,14 @@ async def getNews():
         
         
         for group in groups:
-            lastDate = db.child(group).child("lastDate").get().val()
+            lastDate = db.child('groups').child(int(group)).child("lastDate").get().val()
             lastPost = db.child('groups').child(int(group)).child("lastPost").get().val()
             news = get(filters="post", source_ids=group, start_time=lastDate)["items"]
             postIds = []
          
             if news!=None and news!=[]:  
                 db.child('groups').child(int(group)).update({"lastPost": news[0]['post_id']})
-                db.child('groups').child(group).update({"lastDate": news[0]['date']+1}) 
+                db.child('groups').child(int(group)).update({"lastDate": news[0]['date']+1}) 
             for new in news:
                 await checkKey(keywords=keywords, owner_id=new['source_id'], post_id=new['post_id'], text=new['text'].lower(), typee="📝 пост") 
                 postIds.append(new['post_id'])
