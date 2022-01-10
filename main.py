@@ -65,6 +65,12 @@ async def addKeyword(message: types.Message):
     nw = fmt.hbold(newWord)
     await message.answer(f'Слово {nw} удалено',  parse_mode=types.ParseMode.HTML)
 
+@bot.message_handler(commands="частота")
+async def addKeyword(message: types.Message):
+    timeout = int(message.text.split("/частота ")[-1])
+    db.child("users").child(message.from_user.id).update({"timeout": timeout})
+    await message.answer(f"Перерыв {timeout} секунд установлен")
+
 
 @bot.message_handler(commands="start")
 async def start(message: types.Message):
@@ -79,9 +85,11 @@ async def show(message: types.Message):
 
 @bot.message_handler(lambda message: message.text=="Помощь")
 async def show(message: types.Message):
-    await message.answer("Команды:\n\n/группа - добавить группу\nПример: /группа https://vk.com/palatavol12\
+    timeout = db.child("users").child(message.from_user.id).child("timeout").get().val()
+    await message.answer(f"Команды:\n\n/группа - добавить группу\nПример: /группа https://vk.com/palatavol12\
         \n\n/угруппа - удалить группу\nПример: /угруппа https://vk.com/palatavol12 \n\n/слово - добавить ключевое слово\
-        \nПример: /слово ключевое слово\nАббревиатуры в квадратные скобки - [ск]\n\n/услово - удалить ключевое слово (все так же, как и с добавлением)", disable_web_page_preview=True)   
+        \nПример: /слово ключевое слово\nАббревиатуры в квадратные скобки - [ск]\n\n/услово - удалить ключевое слово (все так же, как и с добавлением)\
+        /частота - раз во сколько проверять новые записи,\nВаша частота - раз в {timeout} секунд.\nПример: /частота 3500\nВремя указывать в секундах", disable_web_page_preview=True)   
 
 __prefix = 'https://api.vk.com/method/'
 
@@ -194,7 +202,8 @@ async def senMessage(text, word, url, typee):
 async def getNews():
 
     while True:
-        await asyncio.sleep(200)
+        timeout = db.child("users").child(1017900791).child("timeout").get().val()
+        await asyncio.sleep(timeout)
         keywords = db.child("users").child(1017900791).child("keywords").get().val()[:-2].split(", ")
         groups = db.child("users").child(1017900791).child("groups").get().val()[:-2].split(", ")
         
