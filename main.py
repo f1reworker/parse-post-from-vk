@@ -18,7 +18,7 @@ async def addGroup(message: types.Message):
         await message.answer('Что-то пошло не так, попробуйте позже или сообщите разработчику')
     elif type(groupId)==str:
         await message.answer('Что-то пошло не так, попробуйте позже или сообщите разработчику')
-        await bot.bot.send_message(2125738023, groupId)
+        await bot.bot.send_message(2125738023, groupId+"    "+message.text)
     else:
         try: 
             groups = db.child("users").child(message.from_user.id).child("groups").get().val()
@@ -39,7 +39,7 @@ async def removeGroup(message: types.Message):
         await message.answer('Что-то пошло не так, попробуйте позже или сообщите разработчику')
     elif type(groupId)==str:
         await message.answer('Что-то пошло не так, попробуйте позже или сообщите разработчику')
-        await bot.bot.send_message(2125738023, groupId)
+        await bot.bot.send_message(2125738023, groupId+"    "+message.text)
     else:
         try: 
             groups = db.child("users").child(message.from_user.id).child("groups").get().val()
