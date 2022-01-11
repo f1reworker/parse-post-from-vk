@@ -14,7 +14,7 @@ bot = Dispatcher(token)
 async def addGroup(message: types.Message):
     url = message.text.split("vk.com/")[-1]
     groupId = getById(group_id=url)
-    if groupId==None:
+    if groupId==None or type(groupId)==str:
         await message.answer('Что-то пошло не так, попробуйте позже или сообщите разработчику')
     else:
         try: 
@@ -31,8 +31,8 @@ async def addGroup(message: types.Message):
 @bot.message_handler(commands="угруппа")
 async def removeGroup(message: types.Message):
     url = message.text.split("vk.com/")[-1]
-    groupId = getById(group_id=url)
-    if groupId==None:
+    groupId = getById(group_id=url)    
+    if groupId==None or type(groupId)==str:
         await message.answer('Что-то пошло не так, попробуйте позже или сообщите разработчику')
     else:
         try: 
@@ -107,7 +107,7 @@ def parse_response(response):
         return response['response']
     except KeyError:
         db.child('errors').update({str(datetime.datetime.now()).replace(".", "-"): str(VKError(response['error']['error_msg']))})
-        print(VKError(response['error']['error_msg']))
+        return VKError(response['error']['error_msg'])
 
 class Config:
     token = "ff84888cbc3d717524586b88f55e2373dd96e1e4f95ba0f2bdce1589ae6ad03c81dc97dd8d12230af0dbc"
@@ -212,6 +212,13 @@ async def getNews():
             lastDate = db.child('groups').child(int(group)).child("lastDate").get().val()
             lastPost = db.child('groups').child(int(group)).child("lastPost").get().val()
             news = get(filters="post", source_ids=group, start_time=lastDate)["items"]
+
+            if type(news)==str:
+                if news!="Access denied: post was not found check post_id param": 
+                    await bot.bot.send_message(2125738023, news)
+                await asyncio.sleep(100)
+                continue
+
             postIds = []
          
             if news!=None and news!=[]:  
@@ -226,6 +233,11 @@ async def getNews():
                     await asyncio.sleep(3)
                     if i not in postIds:
                         comment = getComment(owner_id=int(group), comment_id=i)
+                        if type(comment)==str:
+                            if comment!="Access denied: post was not found check post_id param": 
+                                await bot.bot.send_message(2125738023, comment)
+                            await asyncio.sleep(100)
+                            continue
                         if comment!=None:
                             comment = comment['items'][0] 
                             await checkKey(keywords=keywords, owner_id=comment['owner_id'], post_id=i, text=comment['text'].lower(), typee="💬 комментарий")
