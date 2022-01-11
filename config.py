@@ -13,5 +13,3 @@ firebase = pyrebase.initialize_app(firebaseConfig)
 db= firebase.database()
 
 
-a = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-print(a[:10])
