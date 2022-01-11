@@ -88,7 +88,7 @@ async def show(message: types.Message):
     timeout = db.child("users").child(message.from_user.id).child("timeout").get().val()
     await message.answer(f"Команды:\n\n/группа - добавить группу\nПример: /группа https://vk.com/palatavol12\
         \n\n/угруппа - удалить группу\nПример: /угруппа https://vk.com/palatavol12 \n\n/слово - добавить ключевое слово\
-        \n\nПример: /слово ключевое слово\nАббревиатуры в квадратные скобки - [ск]\n\n/услово - удалить ключевое слово (все так же, как и с добавлением)\
+        \nПример: /слово ключевое слово\nАббревиатуры в квадратные скобки - [ск]\n\n/услово - удалить ключевое слово (все так же, как и с добавлением)\
         \n\n/частота - раз во сколько проверять новые записи,\nВаша частота - раз в {timeout} секунд.\nПример: /частота 3500\nВремя указывать в секундах", disable_web_page_preview=True)   
 
 __prefix = 'https://api.vk.com/method/'
@@ -189,8 +189,8 @@ async def checkKey(keywords, owner_id, post_id, text, typee):
         if(word in text):           
             postAndGroup = str(abs(owner_id))+"_"+ str(post_id)
             url = "https://vk.com/wall-"+postAndGroup
-            await senMessage(text=text, word=word, url=url, typee=typee)
-            db.child("news").update({postAndGroup: {"keyword": word, "text": text[:1000], "url": url, "type": typee}})
+            await senMessage(text=text[:3000], word=word, url=url, typee=typee)
+            db.child("news").update({postAndGroup: {"keyword": word, "text": text[:3000], "url": url, "type": typee}})
             break
 
 
