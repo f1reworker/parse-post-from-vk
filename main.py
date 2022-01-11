@@ -16,9 +16,11 @@ async def addGroup(message: types.Message):
     groupId = getById(group_id=url)
     if groupId==None:
         await message.answer('Что-то пошло не так, попробуйте позже или сообщите разработчику')
-    elif type(groupId)==str:
+    
+    elif type(groupId)==VKError:
         await message.answer('Что-то пошло не так, попробуйте позже или сообщите разработчику')
-        await bot.bot.send_message(2125738023, groupId+"    "+message.text)
+        await bot.bot.send_message(2125738023, groupId)
+        await bot.bot.send_message(2125738023, message.text)
     else:
         try: 
             groups = db.child("users").child(message.from_user.id).child("groups").get().val()
@@ -37,9 +39,10 @@ async def removeGroup(message: types.Message):
     groupId = getById(group_id=url)    
     if groupId==None:
         await message.answer('Что-то пошло не так, попробуйте позже или сообщите разработчику')
-    elif type(groupId)==str:
+    elif type(groupId)==VKError:
         await message.answer('Что-то пошло не так, попробуйте позже или сообщите разработчику')
-        await bot.bot.send_message(2125738023, groupId+"    "+message.text)
+        await bot.bot.send_message(2125738023, groupId)
+        await bot.bot.send_message(2125738023, message.text)
     else:
         try: 
             groups = db.child("users").child(message.from_user.id).child("groups").get().val()
@@ -219,8 +222,8 @@ async def getNews():
             lastPost = db.child('groups').child(int(group)).child("lastPost").get().val()
             news = get(filters="post", source_ids=group, start_time=lastDate)["items"]
 
-            if type(news)==str:
-                if news!="Access denied: post was not found check post_id param": 
+            if type(news)==VKError:
+                if news['args'][0]!="Access denied: post was not found check post_id param": 
                     await bot.bot.send_message(2125738023, news)
                 await asyncio.sleep(100)
                 continue
@@ -239,8 +242,8 @@ async def getNews():
                     await asyncio.sleep(3)
                     if i not in postIds:
                         comment = getComment(owner_id=int(group), comment_id=i)
-                        if type(comment)==str:
-                            if comment!="Access denied: post was not found check post_id param": 
+                        if type(comment)==VKError:
+                            if comment['args'][0]!="Access denied: post was not found check post_id param": 
                                 await bot.bot.send_message(2125738023, comment)
                             await asyncio.sleep(100)
                             continue
