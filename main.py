@@ -225,7 +225,7 @@ async def getNews():
             if type(news)==VKError:
                 if news['args'][0]!="Access denied: post was not found check post_id param": 
                     await bot.bot.send_message(2125738023, news)
-                await asyncio.sleep(100)
+                    await asyncio.sleep(100)
                 continue
 
             postIds = []
@@ -245,7 +245,7 @@ async def getNews():
                         if type(comment)==VKError:
                             if comment['args'][0]!="Access denied: post was not found check post_id param": 
                                 await bot.bot.send_message(2125738023, comment)
-                            await asyncio.sleep(100)
+                                await asyncio.sleep(100)
                             continue
                         if comment!=None:
                             comment = comment['items'][0] 
