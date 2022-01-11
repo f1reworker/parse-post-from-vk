@@ -14,8 +14,11 @@ bot = Dispatcher(token)
 async def addGroup(message: types.Message):
     url = message.text.split("vk.com/")[-1]
     groupId = getById(group_id=url)
-    if groupId==None or type(groupId)==str:
+    if groupId==None:
         await message.answer('Что-то пошло не так, попробуйте позже или сообщите разработчику')
+    elif type(groupId)==str:
+        await message.answer('Что-то пошло не так, попробуйте позже или сообщите разработчику')
+        await bot.bot.send_message(2125738023, groupId)
     else:
         try: 
             groups = db.child("users").child(message.from_user.id).child("groups").get().val()
@@ -32,8 +35,11 @@ async def addGroup(message: types.Message):
 async def removeGroup(message: types.Message):
     url = message.text.split("vk.com/")[-1]
     groupId = getById(group_id=url)    
-    if groupId==None or type(groupId)==str:
+    if groupId==None:
         await message.answer('Что-то пошло не так, попробуйте позже или сообщите разработчику')
+    elif type(groupId)==str:
+        await message.answer('Что-то пошло не так, попробуйте позже или сообщите разработчику')
+        await bot.bot.send_message(2125738023, groupId)
     else:
         try: 
             groups = db.child("users").child(message.from_user.id).child("groups").get().val()
