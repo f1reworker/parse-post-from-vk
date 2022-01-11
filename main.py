@@ -203,7 +203,6 @@ async def checkKey(keywords, owner_id, post_id, text, typee):
             break
 
 
-
 async def senMessage(text, word, url, typee):
     await bot.bot.send_message(1017900791, f'Новый {typee} с ключевым словом\nКлючевое слово: {word}\nСсылка на пост: {url}\nТекст:\n{text}')
     await bot.bot.send_message(2125738023, f'Новый {typee} с ключевым словом\nКлючевое слово: {word}\nСсылка на пост: {url}\nТекст:\n{text}')
@@ -223,9 +222,8 @@ async def getNews():
             news = get(filters="post", source_ids=group, start_time=lastDate)["items"]
 
             if type(news)==VKError:
-                if news['args'][0]!="Access denied: post was not found check post_id param": 
-                    await bot.bot.send_message(2125738023, news)
-                    await asyncio.sleep(100)
+                await bot.bot.send_message(2125738023, news)
+                await asyncio.sleep(100)
                 continue
 
             postIds = []
@@ -243,7 +241,7 @@ async def getNews():
                     if i not in postIds:
                         comment = getComment(owner_id=int(group), comment_id=i)
                         if type(comment)==VKError:
-                            if comment['args'][0]!="Access denied: post was not found check post_id param": 
+                            if comment.args[0]!="Access denied: post was not found check post_id param": 
                                 await bot.bot.send_message(2125738023, comment)
                                 await asyncio.sleep(100)
                             continue
