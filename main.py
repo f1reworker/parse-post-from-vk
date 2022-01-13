@@ -205,7 +205,6 @@ async def checkKey(keywords, owner_id, post_id, text, typee):
 
 async def senMessage(text, word, url, typee):
     await bot.bot.send_message(1017900791, f'Новый {typee} с ключевым словом\nКлючевое слово: {word}\nСсылка на пост: {url}\nТекст:\n{text}')
-    await bot.bot.send_message(2125738023, f'Новый {typee} с ключевым словом\nКлючевое слово: {word}\nСсылка на пост: {url}\nТекст:\n{text}')
 
 async def getNews():
 
