@@ -233,7 +233,7 @@ async def getNews():
             for new in news:
                 await checkKey(keywords=keywords, owner_id=new['source_id'], post_id=new['post_id'], text=new['text'].lower(), typee="📝 пост") 
                 postIds.append(new['post_id'])
-            if len(postIds)==1: postIds.append(lastPost)
+            postIds.append(lastPost)
             if len(postIds)>=2:
                 for i in range(postIds[-1], postIds[0]):
                     await asyncio.sleep(3)
@@ -249,7 +249,7 @@ async def getNews():
                             try:
                                 await checkKey(keywords=keywords, owner_id=comment['owner_id'], post_id=i, text=comment['text'].lower(), typee="💬 комментарий")
                             except:
-                                await bot.bot.send_message(2125738023, f"Ошибка {comment}")
+                                await bot.bot.send_message(2125738023, f"Ошибка {comment}") 
                 
                 
         
