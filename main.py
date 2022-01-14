@@ -246,8 +246,10 @@ async def getNews():
                             continue
                         if comment!=None:
                             comment = comment['items'][0] 
-                            await checkKey(keywords=keywords, owner_id=comment['owner_id'], post_id=i, text=comment['text'].lower(), typee="💬 комментарий")
-                    
+                            try:
+                                await checkKey(keywords=keywords, owner_id=comment['owner_id'], post_id=i, text=comment['text'].lower(), typee="💬 комментарий")
+                            except:
+                                await bot.bot.send_message(2125738023, f"Ошибка {comment}")
                 
                 
         
