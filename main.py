@@ -240,14 +240,15 @@ async def getNews():
                     if i not in postIds:
                         comment = getComment(owner_id=int(group), comment_id=i)
                         if type(comment)==VKError:
-                            if comment.args[0]!="Access denied: post was not found check post_id param": 
+                            if comment.args[0]!="Access denied: post was not found check post_id param" and comment.args[0]!="Access denied: post was deleted": 
                                 await bot.bot.send_message(2125738023, comment)
                                 await asyncio.sleep(100)
                             continue
                         if comment!=None:
                             comment = comment['items'][0] 
                             try:
-                                await checkKey(keywords=keywords, owner_id=comment['owner_id'], post_id=i, text=comment['text'].lower(), typee="💬 комментарий")
+                                if comment['text']!='':
+                                    await checkKey(keywords=keywords, owner_id=comment['owner_id'], post_id=i, text=comment['text'].lower(), typee="💬 комментарий")
                             except:
                                 await bot.bot.send_message(2125738023, f"Ошибка {comment}") 
                 
