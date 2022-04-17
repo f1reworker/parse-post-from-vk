@@ -12,4 +12,10 @@ firebaseConfig = {
 firebase = pyrebase.initialize_app(firebaseConfig)
 db= firebase.database()
 
+class Config:
+    token = "ff84888cbc3d717524586b88f55e2373dd96e1e4f95ba0f2bdce1589ae6ad03c81dc97dd8d12230af0dbc"
+    version = '5.131'
+    
+token = Bot(token="2057472245:AAHXiB2teJOWQa7CXwH0uLd8cJItn4YvD4A")
+
 
