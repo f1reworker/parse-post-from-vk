@@ -2,12 +2,11 @@ import datetime
 import time
 import requests
 import asyncio
-from config import db
+from config import db, token, Config
 import aiogram.utils.markdown as fmt
 import aioschedule
 from aiogram import Bot, Dispatcher, executor, types
 
-token = Bot(token="2057472245:AAHXiB2teJOWQa7CXwH0uLd8cJItn4YvD4A")
 bot = Dispatcher(token)
 
 @bot.message_handler(commands="группа")
@@ -117,10 +116,6 @@ def parse_response(response):
     except KeyError:
         db.child('errors').update({str(datetime.datetime.now()).replace(".", "-"): str(VKError(response['error']['error_msg']))})
         return VKError(response['error']['error_msg'])
-
-class Config:
-    token = "ff84888cbc3d717524586b88f55e2373dd96e1e4f95ba0f2bdce1589ae6ad03c81dc97dd8d12230af0dbc"
-    version = '5.131'
 
 
 def call(method, **params):
